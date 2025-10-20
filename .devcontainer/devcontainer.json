@@ -1,0 +1,14 @@
+{
+    "name": "Ubuntu Dev Container",
+    "build": {
+        "dockerfile": "Dockerfile"
+    },
+    "postCreateCommand": "git clone https://github.com/ingydotnet/git-subrepo.git ~/.git-subrepo && cd ~/.git-subrepo && bash install",
+    "customizations": {
+        "vscode": {
+            "extensions": [
+                "ms-vscode.cmake-tools"
+            ]
+        }
+    }
+}
