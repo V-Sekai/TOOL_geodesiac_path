@@ -1,4 +1,4 @@
-cmake_minimum_required(VERSION 3.0)
+cmake_minimum_required(VERSION 3.10)
 
 project(GLFW C)
 
@@ -375,4 +375,3 @@ if (GLFW_INSTALL)
         set_target_properties(uninstall PROPERTIES FOLDER "GLFW3")
     endif()
 endif()
-
