@@ -1,6 +1,10 @@
 name: Build with CMake and Ninja
 
-on: [push, pull_request]
+on:
+  push:
+  pull_request:
+  release:
+    types: [published]
 
 jobs:
   build:
@@ -64,3 +68,11 @@ jobs:
         with:
           name: build-bin-${{ runner.os }}
           path: build/bin.zip
+
+      - name: Upload Release Asset
+        if: github.event_name == 'release'
+        uses: softprops/action-gh-release@v1
+        with:
+          files: build/bin.zip
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
