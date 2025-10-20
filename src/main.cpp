@@ -502,78 +502,31 @@ void myCallback() {
     fancyPathClosed = true;
     fancyPathMarkVerts = true;
 
-    // First, collect all vertices without constructing
     while(true) {
       long long int vIndex = psMesh->selectVertex();
       if (vIndex == -1) { // User cancelled the selection
         break;
       }
+      
       Vertex v = mesh->vertex(vIndex);
       fancyPathVerts.push_back(v);
       fancyPathVertsPs.emplace_back((size_t)vIndex, (int)fancyPathVertsPs.size());
-    }
 
-    // Construct the path once if we have enough vertices
-    if (fancyPathVerts.size() >= 3) {
-      psMesh->addVertexCountQuantity("fancy path vertices", fancyPathVertsPs);
-
-      edgeNetwork = FlipEdgeNetwork::constructFromPiecewiseDijkstraPath(*mesh, *geometry, fancyPathVerts, fancyPathClosed,
-                                                                        fancyPathMarkVerts);
-      if (edgeNetwork == nullptr) {
-        polyscope::warning("could not initialize fancy edge path between vertices");
-        return;
+      // Only construct the path if there are at least 3 vertices
+      if (fancyPathVerts.size() >= 3) {
+        edgeNetwork = FlipEdgeNetwork::constructFromPiecewiseDijkstraPath(*mesh, *geometry, fancyPathVerts, fancyPathClosed,
+                                                                          fancyPathMarkVerts);
+        if (edgeNetwork == nullptr) {
+          polyscope::warning("could not initialize fancy edge path between vertices");
+          return;
+        }
+        edgeNetwork->posGeom = geometry.get();
+        auto updateFancyPathViz = [&]() { psMesh->addVertexCountQuantity("fancy path vertices", fancyPathVertsPs); };
+        updateFancyPathViz();
+        makeDelaunay();
+        delaunayRefine();
       }
-      edgeNetwork->posGeom = geometry.get();
-
-      // Apply Delaunay and refinement once
-      makeDelaunay();
-      delaunayRefine();
-
-      updatePathViz();
-    } else {
-      polyscope::warning("Need at least 3 vertices to construct a loop");
     }
-  }
-
-  ImGui::SameLine();
-  if (ImGui::Button("Construct loop with Bezier (3 controls)")) {
-    clearData();
-    fancyPathVerts.clear();
-    fancyPathVertsPs.clear();
-    fancyPathClosed = true;
-    fancyPathMarkVerts = true;
-
-    // Collect exactly 3 control points
-    for (int i = 0; i < 3; i++) {
-      long long int vIndex = psMesh->selectVertex();
-      if (vIndex == -1) {
-        polyscope::warning("Cancelled selection, need 3 points for Bezier loop");
-        return;
-      }
-      Vertex v = mesh->vertex(vIndex);
-      fancyPathVerts.push_back(v);
-      fancyPathVertsPs.emplace_back((size_t)vIndex, i);
-    }
-
-    psMesh->addVertexCountQuantity("control vertices", fancyPathVertsPs);
-
-    // Construct initial path from 3 control points
-    edgeNetwork = FlipEdgeNetwork::constructFromPiecewiseDijkstraPath(*mesh, *geometry, fancyPathVerts, fancyPathClosed,
-                                                                      fancyPathMarkVerts);
-    if (edgeNetwork == nullptr) {
-      polyscope::warning("could not initialize path from control points");
-      return;
-    }
-    edgeNetwork->posGeom = geometry.get();
-
-    // Use Bezier subdivision to add intermediate points for smooth curve prediction
-    bezierSubdivide();
-
-    // Apply Delaunay and refinement once
-    makeDelaunay();
-    delaunayRefine();
-
-    updatePathViz();
   }
 
   if (ImGui::Button("Construct new Dijkstra path from endpoints")) {
